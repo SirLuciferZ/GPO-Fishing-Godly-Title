@@ -13,7 +13,6 @@ def get_region():
     x2, y2 = pyautogui.position()
     print(f"Point 2: ({x2}, {y2})")
 
-    # Compute the bounding box (always positive width/height)
     left = min(x1, x2)
     top = min(y1, y2)
     right = max(x1, x2)
@@ -21,7 +20,7 @@ def get_region():
     width = right - left
     height = bottom - top
 
-    print(f"\n✅ Region = ({left}, {top}, {width}, {height})")
+    print(f"\n Region = ({left}, {top}, {width}, {height})")
     return left, top, width, height
 
 
