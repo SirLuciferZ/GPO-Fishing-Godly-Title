@@ -7,8 +7,8 @@ import ctypes
 import pydirectinput
 
 # ===== CONFIGURATION =====
-TARGET_COLOR = (170, 255, 127)  # RGB of the color to look for
-REGION = (1161, 465, 246, 475)  # (left, top, width, height) – screen area to monitor
+TARGET_COLOR = (170, 255, 127)
+REGION = (1161, 465, 246, 475)  # (left, top, width, height)
 TIMEOUT = 25  # seconds to wait for color before restart
 CLICK_DELAY = 1  # seconds between W press and left click
 # =========================
@@ -19,7 +19,7 @@ counter = 0  # Number of successful cycles
 stop_event = threading.Event()  # Used to abort waits when toggling off
 
 
-# Virtual key codes (for Win32 API)
+# Virtual key codes
 KEY_W = 0x57
 
 
@@ -31,7 +31,7 @@ def send_w():
 
 
 def toggle_running():
-    """Callback for F1 hotkey – toggles the process on/off."""
+    """Callback for F1 hotkey."""
     global running, stop_event
     running = not running
     if running:
@@ -48,9 +48,9 @@ def color_in_region(region, target_color):
     matches the target color exactly.
     """
     screenshot = pyautogui.screenshot(region=region)
-    # Convert to numpy array for fast pixel access
+    # Convert to numpy array
     pixels = np.array(screenshot)
-    # Check if any pixel equals target_color
+    # Check if any pixel equals target color
     matches = np.all(pixels == target_color, axis=-1)
     return np.any(matches)
 
@@ -68,7 +68,6 @@ def wait_for_color_with_abort(region, target_color, timeout, abort_event):
             return False
         if color_in_region(region, target_color):
             return True
-        # Small sleep to avoid high CPU usage
         time.sleep(0.1)
     return False
 
@@ -81,69 +80,50 @@ def main_loop():
             time.sleep(0.1)
             continue
 
-        # ----- Process is active -----
-        # 1. Initial left click
+        # ----- Process -----
+        # 1. left click
         if not stop_event.is_set():
             pyautogui.click()
             print("[ACTION] Left click (initial)")
 
-        # 2. Inner cycle: wait for color -> W -> left click -> repeat
+        # 2. wait for color -> W -> left click -> repeat
         while running and not stop_event.is_set():
             # Wait for color with timeout
             found = wait_for_color_with_abort(REGION, TARGET_COLOR, TIMEOUT, stop_event)
             if not found:
                 if stop_event.is_set():
-                    break  # Stopped by user
-                # Timeout – restart from initial left click
+                    break 
+                # Timeout = restart
                 print("[TIMEOUT] Color not seen. Restarting...")
-                break  # Break inner loop to go back to initial left click
-
+                break 
+            
             # Color found
             print("[DETECTED] Target color appears!")
-            
-            # # Color found
-            # print("[DETECTED] Target color appears!")
-
-            # # Optional: activate the game window
-            # try:
-            #     import pygetwindow as gw
-            #     game = gw.getWindowsWithTitle('Your Game Title')[0]  # change this
-            #     game.activate()
-            #     time.sleep(0.1)
-            # except:
-            #     pass
-
-            # # Send W using Win32 API
-            # send_w()
-            # print("[ACTION] W pressed")
 
             # Press W
             pydirectinput.press('w')
             print("[ACTION] W pressed")
 
-            # Wait 1 second (check abort every 0.1s)
+            # wait time before the next click
             wait_end = time.time() + CLICK_DELAY
             while time.time() < wait_end and running and not stop_event.is_set():
                 time.sleep(0.1)
 
             if stop_event.is_set() or not running:
-                break  # User stopped during delay
+                break
 
-            # Left click
+            # next left click
             pyautogui.click()
             print("[ACTION] Left click")
 
-            # Increment counter and print
+            # number of cycles
             counter += 1
             print(f"[COUNTER] Successful cycles: {counter}")
 
-        # End of inner loop – either timeout or user stop
-        # If user stopped, outer loop will see running == False and sleep.
-        # Otherwise (timeout), outer loop will continue and trigger another initial left click.
 
 
 if __name__ == "__main__":
-    # Register hotkey (F1)
+    # Register hotkey
     keyboard.add_hotkey("f1", toggle_running)
 
     try:
